@@ -1,37 +1,98 @@
-import React from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
 
+import {
+	selectUserName,
+	selectUserPhoto,
+	setUserLogin,
+	setSignOut,
+} from "../features/user/userSlice";
+import { useSelector, useDispatch } from "react-redux";
+import { useHistory } from "react-router";
+import { auth, provider } from "../firebase";
+
 function Header() {
+	const dispatch = useDispatch();
+	const history = useHistory();
+	const userName = useSelector(selectUserName);
+	const userPhoto = useSelector(selectUserPhoto);
+
+	useEffect(() => {
+		auth.onAuthStateChanged(async (user) => {
+			if (user) {
+				dispatch(
+					setUserLogin({
+						name: user.displayName,
+						email: user.email,
+						photo: user.photoURL,
+					})
+				);
+				history.push("/");
+			}
+		});
+	});
+
+	const signIn = () => {
+		auth.signInWithPopup(provider).then((result) => {
+			let user = result.user;
+			dispatch(
+				setUserLogin({
+					name: user.displayName,
+					email: user.email,
+					photo: user.photoURL,
+				})
+			);
+			history.push("/");
+		});
+	};
+
+	const signOut = () => {
+		auth.signOut().then(() => {
+			dispatch(setSignOut());
+			history.push("/login");
+		});
+	};
+
 	return (
 		<Nav>
 			<Logo src="/images/logo.svg" />
-			<NavMenu>
-				<a href="">
-					<img src="/images/home-icon.svg" alt="home" />
-					<span>Home</span>
-				</a>
-				<a href="">
-					<img src="/images/search-icon.svg" alt="search" />
-					<span>Search</span>
-				</a>
-				<a href="">
-					<img src="/images/watchlist-icon.svg" alt="watchlist" />
-					<span>Watchlist</span>
-				</a>
-				<a href="">
-					<img src="/images/original-icon.svg" alt="original" />
-					<span>Original</span>
-				</a>
-				<a href="">
-					<img src="/images/movie-icon.svg" alt="movie" />
-					<span>Movies</span>
-				</a>
-				<a href="">
-					<img src="/images/series-icon.svg" alt="series" />
-					<span>Series</span>
-				</a>
-			</NavMenu>
-			<UserImg src="https://lh3.googleusercontent.com/ogw/ADea4I6znVqwfGehoLlYvD4m2v_3rfJl-U8K-Kp8wVxKew=s192-c-mo"></UserImg>
+			{!userName ? (
+				<LoginContainer>
+					<Login onClick={signIn}>Login</Login>
+				</LoginContainer>
+			) : (
+				<>
+					<NavMenu>
+						<a href="#">
+							<img src="/images/home-icon.svg" alt="home" />
+							<span>Home</span>
+						</a>
+						<a href="#">
+							<img src="/images/search-icon.svg" alt="search" />
+							<span>Search</span>
+						</a>
+						<a href="#">
+							<img src="/images/watchlist-icon.svg" alt="watchlist" />
+							<span>Watchlist</span>
+						</a>
+						<a href="#">
+							<img src="/images/original-icon.svg" alt="original" />
+							<span>Original</span>
+						</a>
+						<a href="#">
+							<img src="/images/movie-icon.svg" alt="movie" />
+							<span>Movies</span>
+						</a>
+						<a href="#">
+							<img src="/images/series-icon.svg" alt="series" />
+							<span>Series</span>
+						</a>
+					</NavMenu>
+					<UserImg
+						onClick={signOut}
+						src="https://lh3.googleusercontent.com/ogw/ADea4I6znVqwfGehoLlYvD4m2v_3rfJl-U8K-Kp8wVxKew=s192-c-mo"></UserImg>
+				</>
+			)}
 		</Nav>
 	);
 }
@@ -102,4 +163,27 @@ const UserImg = styled.img`
 	height: 48px;
 	border-radius: 50%;
 	cursor: pointer;
+`;
+
+const Login = styled.div`
+	border: 1px solid #f9f9f9;
+	padding: 8px 16px;
+	border-radius: 4px;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	background-color: rgba(0, 0, 0, 0.6);
+	cursor: pointer;
+	transition: all 0.2 ease 0s;
+
+	&:hover {
+		background-color: #f9f9f9;
+		color: black;
+		border-color: transparent;
+	}
+`;
+
+const LoginContainer = styled.div`
+	display: flex;
+	flex: 1;
+	justify-content: flex-end;
 `;
